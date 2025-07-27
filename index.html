@@ -53,6 +53,35 @@
             margin-bottom: 10px;
         }
 
+        .location-input {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: white;
+            margin: 10px 5px;
+            font-size: 14px;
+        }
+
+        .location-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .location-btn {
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .location-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
         .add-form {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             padding: 25px;
@@ -79,6 +108,19 @@
             flex-direction: column;
         }
 
+        .range-input {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .range-separator {
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+
         label {
             color: white;
             margin-bottom: 5px;
@@ -100,6 +142,11 @@
             background: white;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .custom-species {
+            display: none;
+            margin-top: 10px;
         }
 
         button {
@@ -237,6 +284,7 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
             z-index: 1000;
             animation: slideIn 0.3s ease;
+            max-width: 300px;
         }
 
         @keyframes slideIn {
@@ -271,6 +319,11 @@
             transform: translateY(-2px);
         }
 
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
@@ -283,6 +336,12 @@
             .cactus-grid {
                 grid-template-columns: 1fr;
             }
+
+            .notification {
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
         }
     </style>
 </head>
@@ -292,6 +351,10 @@
         
         <div class="weather-info" id="weatherInfo">
             <h3>現在の気象情報</h3>
+            <div>
+                <input type="text" class="location-input" id="locationInput" placeholder="都市名を入力 (例: Tokyo, Yokohama)" value="Yokohama">
+                <button class="location-btn" onclick="fetchWeatherData()">更新</button>
+            </div>
             <p id="weatherData">気象情報を取得中...</p>
         </div>
 
@@ -305,7 +368,7 @@
                     </div>
                     <div class="form-group">
                         <label for="species">サボテンの種類:</label>
-                        <select id="species" required>
+                        <select id="species" required onchange="toggleCustomSpecies()">
                             <option value="">選択してください</option>
                             <option value="エキノカクタス">エキノカクタス</option>
                             <option value="マミラリア">マミラリア</option>
@@ -316,18 +379,27 @@
                             <option value="アストロフィツム">アストロフィツム</option>
                             <option value="その他">その他</option>
                         </select>
+                        <input type="text" id="customSpecies" class="custom-species" placeholder="種類を入力してください">
                     </div>
                     <div class="form-group">
                         <label for="wateringFreq">水やり頻度 (日):</label>
                         <input type="number" id="wateringFreq" min="1" max="365" required>
                     </div>
                     <div class="form-group">
-                        <label for="optimalTemp">最適温度 (°C):</label>
-                        <input type="number" id="optimalTemp" min="-10" max="50" required>
+                        <label for="optimalTemp">最適温度範囲 (°C):</label>
+                        <div class="range-input">
+                            <input type="number" id="optimalTempMin" min="-10" max="50" placeholder="最低" required>
+                            <span class="range-separator">〜</span>
+                            <input type="number" id="optimalTempMax" min="-10" max="50" placeholder="最高" required>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="optimalHumidity">最適湿度 (%):</label>
-                        <input type="number" id="optimalHumidity" min="0" max="100" required>
+                        <label for="optimalHumidity">最適湿度範囲 (%):</label>
+                        <div class="range-input">
+                            <input type="number" id="optimalHumidityMin" min="0" max="100" placeholder="最低" required>
+                            <span class="range-separator">〜</span>
+                            <input type="number" id="optimalHumidityMax" min="0" max="100" placeholder="最高" required>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="photo">サボテンの写真:</label>
@@ -349,29 +421,64 @@
     <script>
         let cacti = [];
         let currentWeather = null;
+        const API_KEY = '23312fc422d3a99f5eaa4285af299331';
 
-        // 気象情報を取得（OpenWeatherMap APIのような外部APIの代わりにダミーデータを使用）
-        function fetchWeatherData() {
-            // 実際の実装では、ここで気象APIを呼び出します
-            // 例: fetch('https://api.openweathermap.org/data/2.5/weather?q=Yokohama&appid=YOUR_API_KEY')
+        // 気象情報を取得（OpenWeatherMap API使用）
+        async function fetchWeatherData() {
+            const location = document.getElementById('locationInput').value.trim();
+            if (!location) {
+                showNotification('都市名を入力してください');
+                return;
+            }
+
+            const weatherElement = document.getElementById('weatherData');
+            const weatherInfo = document.getElementById('weatherInfo');
             
-            // ダミーデータ（実際にはAPIから取得）
-            const mockWeather = {
-                temperature: Math.round(Math.random() * 20 + 15), // 15-35°C
-                humidity: Math.round(Math.random() * 40 + 40) // 40-80%
-            };
-            
-            currentWeather = mockWeather;
-            updateWeatherDisplay();
-            checkAllCactiConditions();
+            try {
+                weatherElement.textContent = '気象情報を取得中...';
+                weatherInfo.classList.add('loading');
+
+                const response = await fetch(
+                    `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(location)}&appid=${API_KEY}&units=metric&lang=ja`
+                );
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                currentWeather = {
+                    temperature: Math.round(data.main.temp),
+                    humidity: data.main.humidity,
+                    city: data.name,
+                    country: data.sys.country,
+                    description: data.weather[0].description
+                };
+                
+                updateWeatherDisplay();
+                checkAllCactiConditions();
+                
+            } catch (error) {
+                console.error('気象データの取得に失敗:', error);
+                weatherElement.innerHTML = `
+                    ❌ 気象データの取得に失敗しました<br>
+                    <small>都市名を確認してください (例: Tokyo, Yokohama, Osaka)</small>
+                `;
+                showNotification('気象データの取得に失敗しました。都市名を確認してください。');
+            } finally {
+                weatherInfo.classList.remove('loading');
+            }
         }
 
         function updateWeatherDisplay() {
             const weatherElement = document.getElementById('weatherData');
             if (currentWeather) {
                 weatherElement.innerHTML = `
+                    🌍 ${currentWeather.city}, ${currentWeather.country}<br>
                     🌡️ 気温: ${currentWeather.temperature}°C | 
-                    💧 湿度: ${currentWeather.humidity}%
+                    💧 湿度: ${currentWeather.humidity}% | 
+                    ☁️ ${currentWeather.description}
                 `;
             }
         }
@@ -385,27 +492,56 @@
         }
 
         function checkCactusCondition(cactus) {
-            if (!currentWeather) return;
+            if (!currentWeather) return 'good';
             
-            const tempDiff = Math.abs(currentWeather.temperature - cactus.optimalTemp);
-            const humidityDiff = Math.abs(currentWeather.humidity - cactus.optimalHumidity);
+            const tempInRange = currentWeather.temperature >= cactus.optimalTempMin && 
+                               currentWeather.temperature <= cactus.optimalTempMax;
+            const humidityInRange = currentWeather.humidity >= cactus.optimalHumidityMin && 
+                                   currentWeather.humidity <= cactus.optimalHumidityMax;
             
-            if (tempDiff > 5 || humidityDiff > 15) {
-                showNotification(`${cactus.name}の環境が最適範囲を外れています！`);
+            if (!tempInRange || !humidityInRange) {
+                let message = `${cactus.name}の環境が最適範囲を外れています！\n`;
+                if (!tempInRange) {
+                    message += `気温: ${currentWeather.temperature}°C (最適: ${cactus.optimalTempMin}〜${cactus.optimalTempMax}°C)\n`;
+                }
+                if (!humidityInRange) {
+                    message += `湿度: ${currentWeather.humidity}% (最適: ${cactus.optimalHumidityMin}〜${cactus.optimalHumidityMax}%)`;
+                }
+                showNotification(message);
                 return 'warning';
             }
             return 'good';
         }
 
         function showNotification(message) {
+            // 既存の通知を削除
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notification => notification.remove());
+
             const notification = document.createElement('div');
             notification.className = 'notification';
-            notification.textContent = message;
+            notification.innerHTML = message.replace(/\n/g, '<br>');
             document.body.appendChild(notification);
             
             setTimeout(() => {
-                notification.remove();
-            }, 5000);
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 8000);
+        }
+
+        function toggleCustomSpecies() {
+            const species = document.getElementById('species');
+            const customSpecies = document.getElementById('customSpecies');
+            
+            if (species.value === 'その他') {
+                customSpecies.style.display = 'block';
+                customSpecies.required = true;
+            } else {
+                customSpecies.style.display = 'none';
+                customSpecies.required = false;
+                customSpecies.value = '';
+            }
         }
 
         function saveCacti() {
@@ -457,11 +593,11 @@
                         </div>
                         <div class="info-item">
                             <span>最適温度:</span>
-                            <span>${cactus.optimalTemp}°C</span>
+                            <span>${cactus.optimalTempMin}〜${cactus.optimalTempMax}°C</span>
                         </div>
                         <div class="info-item">
                             <span>最適湿度:</span>
-                            <span>${cactus.optimalHumidity}%</span>
+                            <span>${cactus.optimalHumidityMin}〜${cactus.optimalHumidityMax}%</span>
                         </div>
                     </div>
                     <div class="status ${statusClass}">${statusText}</div>
@@ -475,12 +611,41 @@
         document.getElementById('cactusForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            // 温度・湿度の範囲チェック
+            const tempMin = parseInt(document.getElementById('optimalTempMin').value);
+            const tempMax = parseInt(document.getElementById('optimalTempMax').value);
+            const humidityMin = parseInt(document.getElementById('optimalHumidityMin').value);
+            const humidityMax = parseInt(document.getElementById('optimalHumidityMax').value);
+            
+            if (tempMin >= tempMax) {
+                showNotification('最適温度の最低値は最高値より小さくしてください');
+                return;
+            }
+            
+            if (humidityMin >= humidityMax) {
+                showNotification('最適湿度の最低値は最高値より小さくしてください');
+                return;
+            }
+            
+            // 種類の決定
+            let species = document.getElementById('species').value;
+            if (species === 'その他') {
+                const customSpecies = document.getElementById('customSpecies').value.trim();
+                if (!customSpecies) {
+                    showNotification('種類を入力してください');
+                    return;
+                }
+                species = customSpecies;
+            }
+            
             const formData = {
                 name: document.getElementById('name').value,
-                species: document.getElementById('species').value,
+                species: species,
                 wateringFreq: parseInt(document.getElementById('wateringFreq').value),
-                optimalTemp: parseInt(document.getElementById('optimalTemp').value),
-                optimalHumidity: parseInt(document.getElementById('optimalHumidity').value),
+                optimalTempMin: tempMin,
+                optimalTempMax: tempMax,
+                optimalHumidityMin: humidityMin,
+                optimalHumidityMax: humidityMax,
                 photo: null
             };
             
@@ -499,6 +664,8 @@
             // フォームリセット
             this.reset();
             document.querySelector('.file-input-label').textContent = '📷 写真を選択';
+            document.getElementById('customSpecies').style.display = 'none';
+            document.getElementById('customSpecies').required = false;
         });
 
         // ファイル選択時の表示更新
@@ -515,8 +682,8 @@
         loadCacti();
         fetchWeatherData();
         
-        // 定期的に気象情報を更新（5分毎）
-        setInterval(fetchWeatherData, 5 * 60 * 1000);
+        // 定期的に気象情報を更新（10分毎）
+        setInterval(fetchWeatherData, 10 * 60 * 1000);
     </script>
 </body>
 </html>
