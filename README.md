@@ -106,17 +106,8 @@ PWA（Progressive Web App）として使用したい場合は、以下のファ�
 
 このプロジェクトはMITライセンスの下で公開されています。詳細は [LICENSE](LICENSE) ファイルを参照してください。
 
-## 🐛 バグ報告・機能要望
-
-バグ報告や機能要望は [Issues](https://github.com/your-username/cactus-manager-app/issues) からお願いします。
-
 ## 📞 お問い合わせ
 
 プロジェクトについてのご質問は以下まで：
+- Email: csko23094@g.nihon-u.ac.jp
 
-- GitHub: [@your-username](https://github.com/your-username)
-- Email: your-email@example.com
-
----
-
-⭐ このプロジェクトが役に立った場合は、スターをつけていただけると嬉しいです！
