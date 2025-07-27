@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サボテン管理アプリ</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #48bb78, #68d391);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .weather-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+
+        .weather-info h3 {
+            margin-bottom: 10px;
+        }
+
+        .add-form {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 20px rgba(240, 147, 251, 0.3);
+        }
+
+        .add-form h3 {
+            color: white;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            color: white;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .cactus-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .cactus-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cactus-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #48bb78, #68d391);
+        }
+
+        .cactus-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .cactus-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .cactus-image:hover {
+            transform: scale(1.05);
+        }
+
+        .cactus-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2d3748;
+            background: linear-gradient(45deg, #48bb78, #68d391);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .cactus-info {
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: rgba(72, 187, 120, 0.1);
+            border-radius: 8px;
+        }
+
+        .status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-align: center;
+            margin: 10px 0;
+            animation: pulse 2s infinite;
+        }
+
+        .status.good {
+            background: linear-gradient(45deg, #48bb78, #68d391);
+            color: white;
+        }
+
+        .status.warning {
+            background: linear-gradient(45deg, #ed8936, #f6ad55);
+            color: white;
+        }
+
+        .delete-btn {
+            background: linear-gradient(45deg, #f56565, #fc8181);
+            padding: 8px 16px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .delete-btn:hover {
+            box-shadow: 0 8px 20px rgba(245, 101, 101, 0.4);
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            display: block;
+        }
+
+        .file-input-label:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .cactus-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌵 サボテン管理アプリ</h1>
+        
+        <div class="weather-info" id="weatherInfo">
+            <h3>現在の気象情報</h3>
+            <p id="weatherData">気象情報を取得中...</p>
+        </div>
+
+        <div class="add-form">
+            <h3>新しいサボテンを追加</h3>
+            <form id="cactusForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="name">サボテンの名前:</label>
+                        <input type="text" id="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="species">サボテンの種類:</label>
+                        <select id="species" required>
+                            <option value="">選択してください</option>
+                            <option value="エキノカクタス">エキノカクタス</option>
+                            <option value="マミラリア">マミラリア</option>
+                            <option value="フェロカクタス">フェロカクタス</option>
+                            <option value="オプンチア">オプンチア</option>
+                            <option value="セレウス">セレウス</option>
+                            <option value="ギムノカリキウム">ギムノカリキウム</option>
+                            <option value="アストロフィツム">アストロフィツム</option>
+                            <option value="その他">その他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="wateringFreq">水やり頻度 (日):</label>
+                        <input type="number" id="wateringFreq" min="1" max="365" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="optimalTemp">最適温度 (°C):</label>
+                        <input type="number" id="optimalTemp" min="-10" max="50" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="optimalHumidity">最適湿度 (%):</label>
+                        <input type="number" id="optimalHumidity" min="0" max="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="photo">サボテンの写真:</label>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="photo" accept="image/*">
+                            <label for="photo" class="file-input-label">📷 写真を選択</label>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit">サボテンを追加</button>
+            </form>
+        </div>
+
+        <div class="cactus-grid" id="cactusGrid">
+            <!-- サボテンカードがここに動的に追加されます -->
+        </div>
+    </div>
+
+    <script>
+        let cacti = [];
+        let currentWeather = null;
+
+        // 気象情報を取得（OpenWeatherMap APIのような外部APIの代わりにダミーデータを使用）
+        function fetchWeatherData() {
+            // 実際の実装では、ここで気象APIを呼び出します
+            // 例: fetch('https://api.openweathermap.org/data/2.5/weather?q=Yokohama&appid=YOUR_API_KEY')
+            
+            // ダミーデータ（実際にはAPIから取得）
+            const mockWeather = {
+                temperature: Math.round(Math.random() * 20 + 15), // 15-35°C
+                humidity: Math.round(Math.random() * 40 + 40) // 40-80%
+            };
+            
+            currentWeather = mockWeather;
+            updateWeatherDisplay();
+            checkAllCactiConditions();
+        }
+
+        function updateWeatherDisplay() {
+            const weatherElement = document.getElementById('weatherData');
+            if (currentWeather) {
+                weatherElement.innerHTML = `
+                    🌡️ 気温: ${currentWeather.temperature}°C | 
+                    💧 湿度: ${currentWeather.humidity}%
+                `;
+            }
+        }
+
+        function checkAllCactiConditions() {
+            if (!currentWeather) return;
+            
+            cacti.forEach(cactus => {
+                checkCactusCondition(cactus);
+            });
+        }
+
+        function checkCactusCondition(cactus) {
+            if (!currentWeather) return;
+            
+            const tempDiff = Math.abs(currentWeather.temperature - cactus.optimalTemp);
+            const humidityDiff = Math.abs(currentWeather.humidity - cactus.optimalHumidity);
+            
+            if (tempDiff > 5 || humidityDiff > 15) {
+                showNotification(`${cactus.name}の環境が最適範囲を外れています！`);
+                return 'warning';
+            }
+            return 'good';
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        function saveCacti() {
+            // 実際のアプリケーションでは、ここでサーバーに保存するか、
+            // IndexedDBなどのクライアントサイドストレージを使用します
+            console.log('サボテンデータを保存:', cacti);
+        }
+
+        function loadCacti() {
+            // 実際のアプリケーションでは、ここで保存されたデータを読み込みます
+            console.log('サボテンデータを読み込み');
+        }
+
+        function addCactus(cactusData) {
+            cacti.push(cactusData);
+            saveCacti();
+            renderCacti();
+            checkCactusCondition(cactusData);
+        }
+
+        function deleteCactus(index) {
+            cacti.splice(index, 1);
+            saveCacti();
+            renderCacti();
+        }
+
+        function renderCacti() {
+            const grid = document.getElementById('cactusGrid');
+            grid.innerHTML = '';
+            
+            cacti.forEach((cactus, index) => {
+                const status = checkCactusCondition(cactus);
+                const statusText = status === 'good' ? '✅ 環境良好' : '⚠️ 環境注意';
+                const statusClass = status === 'good' ? 'good' : 'warning';
+                
+                const card = document.createElement('div');
+                card.className = 'cactus-card';
+                card.innerHTML = `
+                    ${cactus.photo ? `<img src="${cactus.photo}" alt="${cactus.name}" class="cactus-image">` : ''}
+                    <div class="cactus-name">${cactus.name}</div>
+                    <div class="cactus-info">
+                        <div class="info-item">
+                            <span>種類:</span>
+                            <span>${cactus.species}</span>
+                        </div>
+                        <div class="info-item">
+                            <span>水やり頻度:</span>
+                            <span>${cactus.wateringFreq}日毎</span>
+                        </div>
+                        <div class="info-item">
+                            <span>最適温度:</span>
+                            <span>${cactus.optimalTemp}°C</span>
+                        </div>
+                        <div class="info-item">
+                            <span>最適湿度:</span>
+                            <span>${cactus.optimalHumidity}%</span>
+                        </div>
+                    </div>
+                    <div class="status ${statusClass}">${statusText}</div>
+                    <button class="delete-btn" onclick="deleteCactus(${index})">削除</button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // フォーム送信処理
+        document.getElementById('cactusForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                species: document.getElementById('species').value,
+                wateringFreq: parseInt(document.getElementById('wateringFreq').value),
+                optimalTemp: parseInt(document.getElementById('optimalTemp').value),
+                optimalHumidity: parseInt(document.getElementById('optimalHumidity').value),
+                photo: null
+            };
+            
+            const photoFile = document.getElementById('photo').files[0];
+            if (photoFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    formData.photo = e.target.result;
+                    addCactus(formData);
+                };
+                reader.readAsDataURL(photoFile);
+            } else {
+                addCactus(formData);
+            }
+            
+            // フォームリセット
+            this.reset();
+            document.querySelector('.file-input-label').textContent = '📷 写真を選択';
+        });
+
+        // ファイル選択時の表示更新
+        document.getElementById('photo').addEventListener('change', function(e) {
+            const label = document.querySelector('.file-input-label');
+            if (e.target.files.length > 0) {
+                label.textContent = `📷 ${e.target.files[0].name}`;
+            } else {
+                label.textContent = '📷 写真を選択';
+            }
+        });
+
+        // 初期化
+        loadCacti();
+        fetchWeatherData();
+        
+        // 定期的に気象情報を更新（5分毎）
+        setInterval(fetchWeatherData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
